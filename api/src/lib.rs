@@ -1,5 +1,6 @@
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use crate::error::DecodeError;
 use crate::types::{AgentData, FactionSymbol, RegistrationRequest, RegistrationResult};
 pub use crate::error::Result;
 
@@ -28,6 +29,7 @@ impl SpaceTradersApi {
     }
 
     async fn post<T: Serialize + ?Sized, R: DeserializeOwned>(&self, path: &str, request: &T) -> Result<R> {
+        // TODO: header
         self.handle_response(
             self.client.post(format!("{}/{}", BASE_URL, path))
                 .json(&request)
@@ -45,7 +47,17 @@ impl SpaceTradersApi {
     }
 
     async fn handle_response<R: DeserializeOwned>(&self, response: reqwest::Response) -> Result<R> {
-        response.json::<R>().await.map_err(error::Error::from)
+        let response_text = response.text().await.map_err(error::Error::from)?;
+
+        match serde_json::from_str::<R>(&response_text) {
+            Ok(v) => Ok(v),
+            Err(_) => {
+                match serde_json::from_str::<error::ApiErrorResponse>(&response_text) {
+                    Ok(v) => Err(v.error.into()),
+                    Err(e) => Err(error::Error::DecodeError(DecodeError { message: response_text, error: e }.into()))
+                }
+            }
+        }
     }
 
     pub async fn register(call_sign: &str, faction: FactionSymbol) -> Result<SpaceTradersApi> {

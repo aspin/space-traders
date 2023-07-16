@@ -27,8 +27,24 @@ impl Display for ApiError {
 impl error::Error for ApiError {}
 
 #[derive(Debug)]
+pub struct DecodeError {
+    pub message: String,
+    pub error: serde_json::Error,
+}
+
+impl Display for DecodeError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "could not decode {}: {}", self.message, self.error)
+    }
+}
+
+impl error::Error for DecodeError {}
+
+
+#[derive(Debug)]
 pub enum Error {
     ApiError(ApiError),
+    DecodeError(DecodeError),
     HttpError(reqwest::Error),
 }
 
@@ -37,6 +53,7 @@ impl Display for Error {
         match self {
             Error::ApiError(e) => write!(f, "{}", e),
             Error::HttpError(e) => write!(f, "{}", e),
+            Error::DecodeError(e) => write!(f, "{}", e),
         }
     }
 }
@@ -46,6 +63,7 @@ impl error::Error for Error {
         match self {
             Error::ApiError(e) => Some(e),
             Error::HttpError(e) => Some(e),
+            Error::DecodeError(e) => Some(e),
         }
     }
 }
@@ -53,6 +71,12 @@ impl error::Error for Error {
 impl From<ApiError> for Error {
     fn from(e: ApiError) -> Self {
         Error::ApiError(e)
+    }
+}
+
+impl From<DecodeError> for Error {
+    fn from(e: DecodeError) -> Self {
+        Error::DecodeError(e)
     }
 }
 
