@@ -1,6 +1,12 @@
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ApiResponse<T> {
+    pub data: T,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum FactionSymbol {
     Cosmic
@@ -20,13 +26,7 @@ pub struct RegistrationRequest {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct RegistrationResult {
-    pub data: AgentData,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct AgentData {
+pub struct RegistrationData {
     pub token: String,
     pub agent: Agent,
 }

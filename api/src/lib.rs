@@ -1,7 +1,7 @@
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use crate::error::DecodeError;
-use crate::types::{AgentData, FactionSymbol, RegistrationRequest, RegistrationResult};
+use crate::types::{RegistrationData, FactionSymbol, RegistrationRequest, ApiResponse, Agent};
 pub use crate::error::Result;
 
 pub mod types;
@@ -28,19 +28,24 @@ impl SpaceTradersApi {
         }
     }
 
+    fn authorization(&self) -> String {
+        format!("Bearer {}", self.token)
+    }
+
     async fn post<T: Serialize + ?Sized, R: DeserializeOwned>(&self, path: &str, request: &T) -> Result<R> {
-        // TODO: header
         self.handle_response(
             self.client.post(format!("{}/{}", BASE_URL, path))
+                .header(reqwest::header::AUTHORIZATION, &self.authorization())
                 .json(&request)
                 .send()
                 .await?
         ).await
     }
 
-    async fn post_empty<R: DeserializeOwned>(&self, path: &str) -> Result<R> {
+    async fn get<R: DeserializeOwned>(&self, path: &str) -> Result<R> {
         self.handle_response(
-            self.client.post(format!("{}/{}", BASE_URL, path))
+            self.client.get(format!("{}/{}", BASE_URL, path))
+                .header(reqwest::header::AUTHORIZATION, &self.authorization())
                 .send()
                 .await?
         ).await
@@ -62,7 +67,7 @@ impl SpaceTradersApi {
 
     pub async fn register(call_sign: &str, faction: FactionSymbol) -> Result<SpaceTradersApi> {
         let mut api = SpaceTradersApi::new("");
-        let registration_data = api.post::<RegistrationRequest, RegistrationResult>("register", &RegistrationRequest {
+        let registration_data = api.post::<RegistrationRequest, ApiResponse<RegistrationData>>("register", &RegistrationRequest {
             symbol: String::from(call_sign),
             faction,
         }).await?;
@@ -71,8 +76,8 @@ impl SpaceTradersApi {
         Ok(api)
     }
 
-    pub async fn agent_data(&self) -> Result<AgentData> {
-        return self.post_empty::<AgentData>("my/agent").await;
+    pub async fn agent(&self) -> Result<ApiResponse<Agent>> {
+        return self.get::<ApiResponse<Agent>>("my/agent").await;
     }
 }
 

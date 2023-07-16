@@ -15,6 +15,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    println!("{:?}", api.agent_data().await?);
+    println!("{:?}", api.agent().await?);
     return Ok(());
 }
