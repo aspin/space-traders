@@ -1,6 +1,6 @@
 [workspace]
 
 members = [
-    "space-traders-api",
-    "space-traders-app"
+    "api",
+    "app"
 ]
