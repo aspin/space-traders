@@ -32,20 +32,20 @@ impl SpaceTradersApi {
         format!("Bearer {}", self.token)
     }
 
-    async fn post<T: Serialize + ?Sized, R: DeserializeOwned>(&self, path: &str, request: &T) -> Result<R> {
+    async fn get<R: DeserializeOwned>(&self, path: &str) -> Result<R> {
         self.handle_response(
-            self.client.post(format!("{}/{}", BASE_URL, path))
+            self.client.get(format!("{}/{}", BASE_URL, path))
                 .header(reqwest::header::AUTHORIZATION, &self.authorization())
-                .json(&request)
                 .send()
                 .await?
         ).await
     }
 
-    async fn get<R: DeserializeOwned>(&self, path: &str) -> Result<R> {
+    async fn post<T: Serialize + ?Sized, R: DeserializeOwned>(&self, path: &str, request: &T) -> Result<R> {
         self.handle_response(
-            self.client.get(format!("{}/{}", BASE_URL, path))
+            self.client.post(format!("{}/{}", BASE_URL, path))
                 .header(reqwest::header::AUTHORIZATION, &self.authorization())
+                .json(&request)
                 .send()
                 .await?
         ).await
