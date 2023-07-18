@@ -7,7 +7,6 @@ pub struct ApiResponse<T> {
     pub meta: Option<ApiMeta>,
 }
 
-// TODO: implement using this pages
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ApiMeta {
     pub total: u32,
