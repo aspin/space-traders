@@ -145,7 +145,7 @@ pub enum SupplyType {
 
 pub type SectorSymbol = String;
 pub type SystemSymbol = String;
-pub type WaypointSymbol = String;
+pub type WaypointSymbol = Coordinates;
 pub type MarketGoodSymbol = String;
 
 #[derive(Debug)]
@@ -173,7 +173,7 @@ impl TryFrom<String> for Coordinates {
     type Error = SystemError;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
-        Coordinates::new(value)
+        Coordinates::new(value.as_str())
     }
 }
 
@@ -183,8 +183,14 @@ impl Into<String> for Coordinates {
     }
 }
 
+impl Display for Coordinates {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.waypoint())
+    }
+}
+
 impl Coordinates {
-    pub fn new(s: String) -> Result<Self, SystemError> {
+    pub fn new(s: &str) -> Result<Self, SystemError> {
         let parts: Vec<&str> = s.split("-").collect();
         match parts[..] {
             [sector, system, waypoint] => Ok(Coordinates {
@@ -223,7 +229,7 @@ mod tests {
     #[test]
     fn test_serialize() {
         let expected = String::from("X1-DF55-20250Z");
-        let c = Coordinates::new(expected.clone()).unwrap();
+        let c = Coordinates::new(expected.as_str()).unwrap();
         match serde_json::to_string(&c) {
             Ok(s) => {
                 assert_eq!(format!("\"{}\"", expected), s);
