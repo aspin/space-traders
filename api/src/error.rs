@@ -15,7 +15,7 @@ pub struct ApiErrorResponse {
 pub struct ApiError {
     pub message: String,
     pub code: u32,
-    pub data: HashMap<String, String>,
+    pub data: Option<HashMap<String, String>>,
 }
 
 impl Display for ApiError {

@@ -48,7 +48,12 @@ impl SpaceTradersApi {
         self.get::<R>(path).await.map(|result| result.data)
     }
 
-    async fn get_limit<R: DeserializeOwned>(&self, path: &str, limit: usize) -> Result<Vec<R>> {
+    async fn get_limit<R: DeserializeOwned>(&self, path: &str, limit: Option<usize>) -> Result<Vec<R>> {
+        let limit = match limit {
+            Some(l) => l,
+            None => usize::MAX
+        };
+
         let response = self.get::<Vec<R>>(
             paginate_path(path, 1, MAX_PAGE_LIMIT).as_str()
         ).await?;
@@ -71,7 +76,7 @@ impl SpaceTradersApi {
     }
 
     async fn get_all<R: DeserializeOwned>(&self, path: &str) -> Result<Vec<R>> {
-        self.get_limit(path, usize::MAX).await
+        self.get_limit(path, None).await
     }
 
     async fn post<T: Serialize + ?Sized, R: DeserializeOwned>(&self, path: &str, request: &T) -> Result<R> {

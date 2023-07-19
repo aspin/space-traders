@@ -1,6 +1,53 @@
 use std::fmt::{Display, Formatter};
 use serde::{Deserialize, Serialize};
-use crate::types::{FactionReference };
+use crate::types::{FactionReference, Trait};
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct System {
+    pub symbol: SystemSymbol,
+    pub sector_symbol: SectorSymbol,
+    #[serde(rename = "type")]
+    pub system_type: SystemType,
+    pub x: i64,
+    pub y: i64,
+    pub waypoints: Vec<WaypointReference>,
+    pub factions: Vec<FactionReference>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct WaypointReference {
+    pub symbol: WaypointSymbol,
+    #[serde(rename = "type")]
+    pub waypoint_type: WaypointType,
+    pub x: i64,
+    pub y: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Waypoint {
+    #[serde(flatten)]
+    pub reference: WaypointReference,
+    pub system_symbol: SystemSymbol,
+    pub orbitals: Vec<Orbital>,
+    pub faction: FactionReference,
+    pub traits: Vec<Trait>,
+    pub chart: Chart
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Orbital {
+    pub symbol: String
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Chart {
+    pub waypoint_symbol: Option<WaypointSymbol>,
+    pub submitted_by: String,
+    pub submitted_on: chrono::DateTime<chrono::Utc>,
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
@@ -31,27 +78,6 @@ pub enum WaypointType {
     GravityWell,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct System {
-    pub symbol: SystemSymbol,
-    pub sector_symbol: SectorSymbol,
-    #[serde(rename = "type")]
-    pub system_type: SystemType,
-    pub x: i64,
-    pub y: i64,
-    pub waypoints: Vec<Waypoint>,
-    pub factions: Vec<FactionReference>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Waypoint {
-    pub symbol: WaypointSymbol,
-    #[serde(rename = "type")]
-    pub waypoint_type: WaypointType,
-    pub x: i64,
-    pub y: i64,
-}
 
 pub type SectorSymbol = String;
 pub type SystemSymbol = String;
