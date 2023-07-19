@@ -1,6 +1,7 @@
 use std::fmt::{Display, Formatter};
 use serde::{Deserialize, Serialize};
 
+#[derive(Debug)]
 pub enum SystemError {
     InvalidCoordinates
 }
@@ -70,6 +71,18 @@ mod tests {
     #[derive(Deserialize)]
     struct Object {
         pub coordinates: Coordinates,
+    }
+
+    #[test]
+    fn test_serialize() {
+        let expected = String::from("X1-DF55-20250Z");
+        let c = Coordinates::new(expected.clone()).unwrap();
+        match serde_json::to_string(&c) {
+            Ok(s) => {
+                assert_eq!( format!("\"{}\"", expected), s);
+            }
+            Err(e) => assert!(false, "could not serialize: {:?}", e)
+        }
     }
 
     #[test]
