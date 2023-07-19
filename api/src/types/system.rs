@@ -1,6 +1,6 @@
-use std::fmt::{Display, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 use serde::{Deserialize, Serialize};
-use crate::types::{FactionReference, ShipSymbol, Trait};
+use crate::types::{FactionReference, ShipSymbol};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -32,7 +32,7 @@ pub struct Waypoint {
     pub system_symbol: SystemSymbol,
     pub orbitals: Vec<Orbital>,
     pub faction: Option<FactionReference>,
-    pub traits: Vec<Trait>,
+    pub traits: Vec<WaypointTrait>,
     pub chart: Option<Chart>,
 }
 
@@ -45,6 +45,14 @@ impl Waypoint {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Orbital {
     pub symbol: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WaypointTrait {
+    pub symbol: WaypointTraitSymbol,
+    pub name: String,
+    pub description: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -145,7 +153,7 @@ pub enum SupplyType {
 
 pub type SectorSymbol = String;
 pub type SystemSymbol = String;
-pub type WaypointSymbol = Coordinates;
+pub type WaypointTraitSymbol = String;
 pub type MarketGoodSymbol = String;
 
 #[derive(Debug)]
@@ -161,39 +169,45 @@ impl Display for SystemError {
     }
 }
 
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(PartialEq, Clone, Serialize, Deserialize)]
 #[serde(try_from = "String", into = "String")]
-pub struct Coordinates {
+pub struct WaypointSymbol {
     _sector: String,
     _system: String,
     _waypoint: String,
 }
 
-impl TryFrom<String> for Coordinates {
+impl TryFrom<String> for WaypointSymbol {
     type Error = SystemError;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
-        Coordinates::new(value.as_str())
+        WaypointSymbol::new(value.as_str())
     }
 }
 
-impl Into<String> for Coordinates {
+impl Into<String> for WaypointSymbol {
     fn into(self) -> String {
         self._waypoint
     }
 }
 
-impl Display for Coordinates {
+impl Display for WaypointSymbol {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.write_str(self.waypoint())
     }
 }
 
-impl Coordinates {
+impl Debug for WaypointSymbol {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.waypoint())
+    }
+}
+
+impl WaypointSymbol {
     pub fn new(s: &str) -> Result<Self, SystemError> {
         let parts: Vec<&str> = s.split("-").collect();
         match parts[..] {
-            [sector, system, waypoint] => Ok(Coordinates {
+            [sector, system, waypoint] => Ok(WaypointSymbol {
                 _sector: sector.to_string(),
                 _system: format!("{}-{}", sector, system),
                 _waypoint: format!("{}-{}-{}", sector, system, waypoint),
@@ -219,17 +233,17 @@ impl Coordinates {
 mod tests {
     use serde::Deserialize;
     use serde_json::json;
-    use crate::types::system::Coordinates;
+    use crate::types::system::WaypointSymbol;
 
     #[derive(Deserialize)]
     struct Object {
-        pub coordinates: Coordinates,
+        pub coordinates: WaypointSymbol,
     }
 
     #[test]
     fn test_serialize() {
         let expected = String::from("X1-DF55-20250Z");
-        let c = Coordinates::new(expected.as_str()).unwrap();
+        let c = WaypointSymbol::new(expected.as_str()).unwrap();
         match serde_json::to_string(&c) {
             Ok(s) => {
                 assert_eq!(format!("\"{}\"", expected), s);
