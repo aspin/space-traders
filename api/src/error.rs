@@ -1,30 +1,10 @@
-use std::collections::HashMap;
 use std::error;
 use std::fmt::{Display, Formatter};
-use serde::{Deserialize, Serialize};
+
 use reqwest;
+use crate::types;
 
 pub type Result<T> = std::result::Result<T, Error>;
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ApiErrorResponse {
-    pub error: ApiError,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ApiError {
-    pub message: String,
-    pub code: u32,
-    pub data: HashMap<String, String>,
-}
-
-impl Display for ApiError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "[{}] {}", self.code, self.message)
-    }
-}
-
-impl error::Error for ApiError {}
 
 #[derive(Debug)]
 pub struct DecodeError {
@@ -40,10 +20,9 @@ impl Display for DecodeError {
 
 impl error::Error for DecodeError {}
 
-
 #[derive(Debug)]
 pub enum Error {
-    ApiError(ApiError),
+    ApiError(types::ApiError),
     DecodeError(DecodeError),
     HttpError(reqwest::Error),
 }
@@ -68,8 +47,8 @@ impl error::Error for Error {
     }
 }
 
-impl From<ApiError> for Error {
-    fn from(e: ApiError) -> Self {
+impl From<types::ApiError> for Error {
+    fn from(e: types::ApiError) -> Self {
         Error::ApiError(e)
     }
 }

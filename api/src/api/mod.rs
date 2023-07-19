@@ -1,8 +1,9 @@
-use std::collections::HashMap;
+mod system;
+
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use crate::types;
-use crate::error::{DecodeError, Result, Error, ApiErrorResponse};
+use crate::error::{DecodeError, Result, Error};
 
 const BASE_URL: &str = "https://api.spacetraders.io/v2";
 const MAX_PAGE_LIMIT: u32 = 20;
@@ -11,8 +12,6 @@ const MAX_PAGE_LIMIT: u32 = 20;
 pub struct SpaceTradersApi {
     client: reqwest::Client,
     token: String,
-    factions: HashMap<types::FactionSymbol, types::Faction>,
-    user_agent: Option<types::Agent>,
 }
 
 impl SpaceTradersApi {
@@ -20,8 +19,6 @@ impl SpaceTradersApi {
         SpaceTradersApi {
             client: reqwest::Client::new(),
             token: String::from(auth_token),
-            factions: HashMap::new(),
-            user_agent: None,
         }
     }
 
@@ -29,11 +26,7 @@ impl SpaceTradersApi {
         format!("Bearer {}", self.token)
     }
 
-    pub fn faction_symbols(&self) -> Vec<types::FactionSymbol> {
-        self.factions.keys().cloned().collect()
-    }
-
-    async fn get<R: DeserializeOwned>(&self, path: &str) -> Result<types::ApiResponse<R>> {
+    async fn get<R: DeserializeOwned>(&self, path: &str) -> Result<types::ApiSuccess<R>> {
         self.handle_response(
             self.client.get(format!("{}/{}", BASE_URL, path))
                 .header(reqwest::header::AUTHORIZATION, &self.authorization())
@@ -46,9 +39,19 @@ impl SpaceTradersApi {
         self.get::<R>(path).await.map(|result| result.data)
     }
 
-    async fn get_limit<R: DeserializeOwned>(&self, path: &str, limit: usize) -> Result<Vec<R>> {
+    async fn get_limit<R: DeserializeOwned>(&self, path: &str, page: Option<u32>, limit: Option<usize>) -> Result<Vec<R>> {
+        let page = match page {
+            Some(p) => p,
+            None => 1
+        };
+
+        let limit = match limit {
+            Some(l) => l,
+            None => usize::MAX
+        };
+
         let response = self.get::<Vec<R>>(
-            paginate_path(path, 1, MAX_PAGE_LIMIT).as_str()
+            paginate_path(path, page, MAX_PAGE_LIMIT).as_str()
         ).await?;
 
         let mut results = response.data;
@@ -69,7 +72,7 @@ impl SpaceTradersApi {
     }
 
     async fn get_all<R: DeserializeOwned>(&self, path: &str) -> Result<Vec<R>> {
-        self.get_limit(path, usize::MAX).await
+        self.get_limit(path, None, None).await
     }
 
     async fn post<T: Serialize + ?Sized, R: DeserializeOwned>(&self, path: &str, request: &T) -> Result<R> {
@@ -82,17 +85,20 @@ impl SpaceTradersApi {
         ).await.map(|response| response.data)
     }
 
-    async fn handle_response<R: DeserializeOwned>(&self, response: reqwest::Response) -> Result<types::ApiResponse<R>> {
+    async fn handle_response<T: DeserializeOwned>(&self, response: reqwest::Response) -> Result<types::ApiSuccess<T>> {
         let response_text = response.text().await.map_err(Error::from)?;
 
-        match serde_json::from_str::<types::ApiResponse<R>>(&response_text) {
-            Ok(v) => Ok(v),
-            Err(e) => {
-                match serde_json::from_str::<ApiErrorResponse>(&response_text) {
-                    Ok(v) => Err(v.error.into()),
-                    Err(_) => Err(Error::DecodeError(DecodeError { message: response_text, error: e }.into()))
+        match serde_json::from_str::<types::ApiResponse<T>>(&response_text) {
+            Ok(response) => {
+                match response.result {
+                    types::ApiResult::Success(v) => Ok(types::ApiSuccess {
+                        data: v,
+                        meta: response.meta,
+                    }),
+                    types::ApiResult::Error(e) => Err(e.into())
                 }
             }
+            Err(e) => Err(Error::DecodeError(DecodeError { message: response_text, error: e }.into()))
         }
     }
 
@@ -107,24 +113,15 @@ impl SpaceTradersApi {
         Ok(api)
     }
 
-    pub async fn hydrate(&mut self) -> Result<()> {
-        self.user_agent = Some(self.fetch_agent().await?);
-
-        for faction in self.fetch_factions().await?.into_iter() {
-            self.factions.insert(faction.symbol.clone(), faction);
-        }
-        Ok(())
-    }
-
-    pub async fn fetch_agent(&self) -> Result<types::Agent> {
+    pub async fn get_agent(&self) -> Result<types::Agent> {
         return self.get_one("my/agent").await;
     }
 
-    pub async fn fetch_factions(&self) -> Result<Vec<types::Faction>> {
+    pub async fn list_factions(&self) -> Result<Vec<types::Faction>> {
         return self.get_all("factions").await;
     }
 
-    pub async fn fetch_contracts(&self) -> Result<Vec<types::Contract>> {
+    pub async fn list_contracts(&self) -> Result<Vec<types::Contract>> {
         return self.get_all("my/contracts").await;
     }
 }
