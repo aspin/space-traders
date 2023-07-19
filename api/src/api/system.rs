@@ -22,11 +22,11 @@ impl SpaceTradersApi {
         self.get_one(format!("systems/{}/waypoints/{}/market", waypoint_symbol.system(), waypoint_symbol).as_str()).await
     }
 
-    pub async fn get_shipyard(&self, waypoint_symbol: types::WaypointSymbol) -> error::Result<types::Waypoint> {
+    pub async fn get_shipyard(&self, waypoint_symbol: types::WaypointSymbol) -> error::Result<types::Shipyard> {
         self.get_one(format!("systems/{}/waypoints/{}/shipyard", waypoint_symbol.system(), waypoint_symbol).as_str()).await
     }
 
-    pub async fn get_jump_gate(&self, waypoint_symbol: types::WaypointSymbol) -> error::Result<types::Waypoint> {
+    pub async fn get_jump_gate(&self, waypoint_symbol: types::WaypointSymbol) -> error::Result<types::JumpGate> {
         self.get_one(format!("systems/{}/waypoints/{}/jump-gate", waypoint_symbol.system(), waypoint_symbol).as_str()).await
     }
 }

@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use serde::{Deserialize, Serialize};
 
-use crate::types::{FactionReference, MarketGoodSymbol, SectorSymbol, ShipSymbol, SystemSymbol, WaypointSymbol, WaypointTraitSymbol};
+use crate::types::{AgentSymbol, FactionReference, FactionSymbol, MarketGoodSymbol, SectorSymbol, ShipEngine, ShipFrame, ShipModule, ShipMount, ShipReactor, ShipSymbol, SystemSymbol, WaypointSymbol, WaypointTraitSymbol};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -42,6 +42,14 @@ impl Waypoint {
     pub fn is_market(&self) -> bool {
         self.traits.iter().find(|t| t.symbol == "MARKETPLACE".to_string()).is_some()
     }
+
+    pub fn is_shipyard(&self) -> bool {
+        self.traits.iter().find(|t| t.symbol == "SHIPYARD".to_string()).is_some()
+    }
+
+    pub fn is_jump_gate(&self) -> bool {
+        self.reference.waypoint_type == WaypointType::JumpGate
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -73,7 +81,7 @@ pub struct Market {
     pub imports: Vec<MarketGood>,
     pub exports: Vec<MarketGood>,
     pub exchange: Vec<MarketGood>,
-    pub transactions: Vec<Transaction>,
+    pub transactions: Vec<MarketTransaction>,
     pub trade_goods: Vec<MarketTradeGood>,
 }
 
@@ -86,7 +94,7 @@ pub struct MarketGood {
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Transaction {
+pub struct MarketTransaction {
     pub waypoint_symbol: WaypointSymbol,
     pub ship_symbol: ShipSymbol,
     pub trade_symbol: MarketGoodSymbol,
@@ -109,6 +117,67 @@ pub struct MarketTradeGood {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Shipyard {
+    pub symbol: WaypointSymbol,
+    pub ship_types: Vec<ShipTypeReference>,
+    pub transactions: Vec<ShipTransaction>,
+    pub ships: Vec<Ship>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ShipTypeReference {
+    #[serde(rename = "type")]
+    pub ship_type: ShipType,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ShipTransaction {
+    pub waypoint_symbol: WaypointSymbol,
+    pub ship_symbol: ShipSymbol,
+    pub price: u64,
+    pub agent_symbol: AgentSymbol,
+    pub timestamp: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Ship {
+    #[serde(rename = "type")]
+    pub ship_type: ShipType,
+    pub name: String,
+    pub description: String,
+    pub purchase_price: u64,
+    pub frame: ShipFrame,
+    pub reactor: ShipReactor,
+    pub engine: ShipEngine,
+    pub modules: Vec<ShipModule>,
+    pub mounts: Vec<ShipMount>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct JumpGate {
+    pub jump_range: i64,
+    pub faction_symbol: FactionSymbol,
+    pub connected_systems: Vec<ConnectedSystem>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ConnectedSystem {
+    pub symbol: SystemSymbol,
+    pub sector_symbol: SectorSymbol,
+    #[serde(rename = "type")]
+    pub system_type: SystemType,
+    pub faction_symbol: FactionSymbol,
+    pub x: i64,
+    pub y: i64,
+    pub distance: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum SystemType {
     NeutronStar,
@@ -123,7 +192,7 @@ pub enum SystemType {
     Unstable,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum WaypointType {
     Planet,
@@ -151,4 +220,19 @@ pub enum SupplyType {
     Limited,
     Moderate,
     Abundant,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum ShipType {
+    ShipProbe,
+    ShipMiningDrone,
+    ShipInterceptor,
+    ShipLightHauler,
+    ShipCommandFrigate,
+    ShipExplorer,
+    ShipHeavyFreighter,
+    ShipLightShuttle,
+    ShipOreHound,
+    ShipRefiningFreighter,
 }
