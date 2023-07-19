@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::time::Duration;
 use crate::{error, SpaceTradersApi, types};
 
 #[derive(Debug)]
@@ -45,18 +46,24 @@ impl ApiManager {
     pub async fn find_market_waypoints(&self, limit: usize) -> error::Result<Vec<types::WaypointSymbol>> {
         let mut market_waypoints = Vec::<types::WaypointSymbol>::new();
 
+        let mut page = 1;
         while market_waypoints.len() < limit {
-            for system in self.api.list_systems(Some(20)).await? {
-                for waypoint in self.api.list_system_waypoints(system.symbol, Some(20)).await? {
+            for system in self.api.list_systems(Some(page), Some(20)).await? {
+                for waypoint in self.api.list_system_waypoints(system.symbol.clone(), None, None).await? {
                     if waypoint.is_market() {
-                        market_waypoints.push(waypoint.reference.symbol)
+                        market_waypoints.push(waypoint.reference.symbol.clone())
                     }
 
                     if market_waypoints.len() >= limit {
                         return Ok(market_waypoints);
                     }
+
+                    // println!("checked {}, {} markets found", waypoint.reference.symbol, market_waypoints.len());
                 }
+                tokio::time::sleep(Duration::from_millis(500)).await;
+                println!("checked system {}, {} markets found", system.symbol, market_waypoints.len());
             }
+            page += 1;
         }
 
         Ok(market_waypoints)

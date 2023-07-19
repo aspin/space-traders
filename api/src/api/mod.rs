@@ -39,14 +39,19 @@ impl SpaceTradersApi {
         self.get::<R>(path).await.map(|result| result.data)
     }
 
-    async fn get_limit<R: DeserializeOwned>(&self, path: &str, limit: Option<usize>) -> Result<Vec<R>> {
+    async fn get_limit<R: DeserializeOwned>(&self, path: &str, page: Option<u32>, limit: Option<usize>) -> Result<Vec<R>> {
+        let page = match page {
+            Some(p) => p,
+            None => 1
+        };
+
         let limit = match limit {
             Some(l) => l,
             None => usize::MAX
         };
 
         let response = self.get::<Vec<R>>(
-            paginate_path(path, 1, MAX_PAGE_LIMIT).as_str()
+            paginate_path(path, page, MAX_PAGE_LIMIT).as_str()
         ).await?;
 
         let mut results = response.data;
@@ -67,7 +72,7 @@ impl SpaceTradersApi {
     }
 
     async fn get_all<R: DeserializeOwned>(&self, path: &str) -> Result<Vec<R>> {
-        self.get_limit(path, None).await
+        self.get_limit(path, None, None).await
     }
 
     async fn post<T: Serialize + ?Sized, R: DeserializeOwned>(&self, path: &str, request: &T) -> Result<R> {
@@ -86,7 +91,6 @@ impl SpaceTradersApi {
         match serde_json::from_str::<types::ApiResponse<R>>(&response_text) {
             Ok(types::ApiResponse::ApiSuccess(v)) => Ok(v),
             Ok(types::ApiResponse::ApiErrored(e)) => Err(e.error.into()),
-            Ok(types::ApiResponse::ApiRateLimited(v)) => Err(v.message.into()),
             Err(e) => Err(Error::DecodeError(DecodeError { message: response_text, error: e }.into()))
         }
     }

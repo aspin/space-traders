@@ -4,7 +4,7 @@ use space_traders_api::types::FactionSymbol;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut api = match std::env::var("AUTH_TOKEN") {
+    let api = match std::env::var("AUTH_TOKEN") {
         Ok(auth_token) => {
             println!("auth token found! instantiating API");
             SpaceTradersApi::new(&auth_token)
