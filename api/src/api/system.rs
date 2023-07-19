@@ -20,7 +20,7 @@ impl SpaceTradersApi {
     }
 
     // TODO: should only really require waypoint symbol, need to handle errors
-    pub async fn get_market(&self, system_symbol: types::SystemSymbol, waypoint_symbol: types::WaypointSymbol) -> error::Result<types::Waypoint> {
+    pub async fn get_market(&self, system_symbol: types::SystemSymbol, waypoint_symbol: types::WaypointSymbol) -> error::Result<types::Market> {
         self.get_one(format!("systems/{}/waypoints/{}/market", system_symbol, waypoint_symbol).as_str()).await
     }
 

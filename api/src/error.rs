@@ -20,7 +20,6 @@ impl Display for DecodeError {
 
 impl error::Error for DecodeError {}
 
-
 #[derive(Debug)]
 pub enum Error {
     ApiError(types::ApiError),

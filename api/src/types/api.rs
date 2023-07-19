@@ -1,20 +1,28 @@
-use std::error as stderror;
+use std::error;
 use std::fmt::{Display, Formatter};
 use serde::{Serialize, Deserialize};
 use crate::types::{Agent, FactionSymbol};
-use crate::error;
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum ApiResponse<'a> {
-    #[serde(borrow)]
-    ApiSuccess(ApiSuccess<'a>),
-    ApiErrored(ApiErrorResponse),
+pub struct ApiResponse<T> {
+    #[serde(flatten)]
+    pub result: ApiResult<T>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub meta: Option<ApiMeta>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ApiErrorResponse {
-    pub error: ApiError,
+pub enum ApiResult<T> {
+    #[serde(rename = "data")]
+    Success(T),
+    #[serde(rename = "error")]
+    Error(ApiError),
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ApiSuccess<T> {
+    pub data: T,
+    pub meta: Option<ApiMeta>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -30,30 +38,7 @@ impl Display for ApiError {
     }
 }
 
-impl stderror::Error for ApiError {}
-
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ApiSuccess<'a> {
-    #[serde(borrow)]
-    pub data: &'a serde_json::value::RawValue,
-    pub meta: Option<ApiMeta>,
-}
-
-impl <'a, T> TryInto<ApiMessage<T>> for ApiSuccess<'a> {
-    type Error = error::Error;
-
-    fn try_into(self) -> Result<ApiMessage<T>, Self::Error> {
-        todo!()
-    }
-}
-
-#[derive(Debug, Serialize)]
-pub struct ApiMessage<T> {
-    pub data: T,
-    pub meta: Option<ApiMeta>,
-}
-
+impl error::Error for ApiError {}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ApiMeta {
