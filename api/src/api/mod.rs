@@ -26,7 +26,7 @@ impl SpaceTradersApi {
         format!("Bearer {}", self.token)
     }
 
-    async fn get<R: DeserializeOwned>(&self, path: &str) -> Result<types::ApiSuccess<R>> {
+    async fn get<R: DeserializeOwned>(&self, path: &str) -> Result<types::ApiMessage<R>> {
         self.handle_response(
             self.client.get(format!("{}/{}", BASE_URL, path))
                 .header(reqwest::header::AUTHORIZATION, &self.authorization())
@@ -85,11 +85,11 @@ impl SpaceTradersApi {
         ).await.map(|response| response.data)
     }
 
-    async fn handle_response<R: DeserializeOwned>(&self, response: reqwest::Response) -> Result<types::ApiSuccess<R>> {
+    async fn handle_response<R: DeserializeOwned>(&self, response: reqwest::Response) -> Result<types::ApiMessage<R>> {
         let response_text = response.text().await.map_err(Error::from)?;
 
-        match serde_json::from_str::<types::ApiResponse<R>>(&response_text) {
-            Ok(types::ApiResponse::ApiSuccess(v)) => Ok(v),
+        match serde_json::from_str::<types::ApiResponse>(&response_text) {
+            Ok(types::ApiResponse::ApiSuccess(v)) => v.try_into(),
             Ok(types::ApiResponse::ApiErrored(e)) => Err(e.error.into()),
             Err(e) => Err(Error::DecodeError(DecodeError { message: response_text, error: e }.into()))
         }

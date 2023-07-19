@@ -38,7 +38,7 @@ pub struct Waypoint {
 
 impl Waypoint {
     pub fn is_market(&self) -> bool {
-        self.traits.iter().find(|t| t.symbol == "MARKET".to_string()).is_some()
+        self.traits.iter().find(|t| t.symbol == "MARKETPLACE".to_string()).is_some()
     }
 }
 
