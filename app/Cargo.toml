@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 space-traders-api = { path = "../api" }
+tokio = { version = "1", features = ["full"] }

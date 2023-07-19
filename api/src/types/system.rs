@@ -1,6 +1,6 @@
 use std::fmt::{Display, Formatter};
 use serde::{Deserialize, Serialize};
-use crate::types::{FactionReference, Trait};
+use crate::types::{FactionReference, ShipSymbol, Trait};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -31,14 +31,20 @@ pub struct Waypoint {
     pub reference: WaypointReference,
     pub system_symbol: SystemSymbol,
     pub orbitals: Vec<Orbital>,
-    pub faction: FactionReference,
+    pub faction: Option<FactionReference>,
     pub traits: Vec<Trait>,
-    pub chart: Chart
+    pub chart: Option<Chart>,
+}
+
+impl Waypoint {
+    pub fn is_market(&self) -> bool {
+        self.traits.iter().find(|t| t.symbol == "MARKET".to_string()).is_some()
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Orbital {
-    pub symbol: String
+    pub symbol: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -47,6 +53,49 @@ pub struct Chart {
     pub waypoint_symbol: Option<WaypointSymbol>,
     pub submitted_by: String,
     pub submitted_on: chrono::DateTime<chrono::Utc>,
+}
+
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Market {
+    pub symbol: WaypointSymbol,
+    pub imports: Vec<MarketGood>,
+    pub exports: Vec<MarketGood>,
+    pub exchange: Vec<MarketGood>,
+    pub transactions: Vec<Transaction>,
+    pub trade_goods: Vec<MarketTradeGood>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MarketGood {
+    pub symbol: MarketGoodSymbol,
+    pub name: String,
+    pub description: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Transaction {
+    pub waypoint_symbol: WaypointSymbol,
+    pub ship_symbol: ShipSymbol,
+    pub trade_symbol: MarketGoodSymbol,
+    #[serde(rename = "type")]
+    pub trade_type: TradeType,
+    pub units: u64,
+    pub price_per_unit: u64,
+    pub total_price: u64,
+    pub timestamp: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MarketTradeGood {
+    pub symbol: MarketGoodSymbol,
+    pub trade_volume: u64,
+    pub supply: SupplyType,
+    pub purchase_price: u64,
+    pub sell_price: u64,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -78,10 +127,26 @@ pub enum WaypointType {
     GravityWell,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum TradeType {
+    Purchase,
+    Sell,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum SupplyType {
+    Scarce,
+    Limited,
+    Moderate,
+    Abundant,
+}
 
 pub type SectorSymbol = String;
 pub type SystemSymbol = String;
 pub type WaypointSymbol = String;
+pub type MarketGoodSymbol = String;
 
 #[derive(Debug)]
 pub enum SystemError {

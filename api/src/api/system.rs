@@ -18,4 +18,19 @@ impl SpaceTradersApi {
     pub async fn get_waypoint(&self, system_symbol: types::SystemSymbol, waypoint_symbol: types::WaypointSymbol) -> error::Result<types::Waypoint> {
         self.get_one(format!("systems/{}/waypoints/{}", system_symbol, waypoint_symbol).as_str()).await
     }
+
+    // TODO: should only really require waypoint symbol, need to handle errors
+    pub async fn get_market(&self, system_symbol: types::SystemSymbol, waypoint_symbol: types::WaypointSymbol) -> error::Result<types::Waypoint> {
+        self.get_one(format!("systems/{}/waypoints/{}/market", system_symbol, waypoint_symbol).as_str()).await
+    }
+
+    // // TODO: should only really require waypoint symbol, need to handle errors
+    // pub async fn get_shipyard(&self, system_symbol: types::SystemSymbol, waypoint_symbol: types::WaypointSymbol) -> error::Result<types::Waypoint> {
+    //     self.get_one(format!("systems/{}/waypoints/{}/shipyard", system_symbol, waypoint_symbol).as_str()).await
+    // }
+    //
+    // // TODO: should only really require waypoint symbol, need to handle errors
+    // pub async fn get_jump_gate(&self, system_symbol: types::SystemSymbol, waypoint_symbol: types::WaypointSymbol) -> error::Result<types::Waypoint> {
+    //     self.get_one(format!("systems/{}/waypoints/{}/jump-gate", system_symbol, waypoint_symbol).as_str()).await
+    // }
 }

@@ -851,6 +851,7 @@ name = "space-traders-app"
 version = "0.1.0"
 dependencies = [
  "space-traders-api",
+ "tokio",
 ]
 
 [[package]]
