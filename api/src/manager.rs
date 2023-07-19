@@ -43,27 +43,27 @@ impl ApiManager {
         Ok(())
     }
 
-    pub async fn find_market_waypoints(&self, limit: usize) -> error::Result<Vec<types::WaypointSymbol>> {
-        let mut market_waypoints = Vec::<types::WaypointSymbol>::new();
+    pub async fn find_waypoint_type(&self, limit: usize, p: fn(&types::Waypoint) -> bool) -> error::Result<Vec<types::WaypointSymbol>> {
+        let mut waypoints = Vec::<types::WaypointSymbol>::new();
 
         let mut page = 1;
-        while market_waypoints.len() < limit {
+        while waypoints.len() < limit {
             for system in self.api.list_systems(Some(page), Some(20)).await? {
                 for waypoint in self.api.list_system_waypoints(system.symbol.clone(), None, None).await? {
-                    if waypoint.is_market() {
-                        market_waypoints.push(waypoint.reference.symbol.clone())
+                    if p(&waypoint) {
+                        waypoints.push(waypoint.reference.symbol.clone())
                     }
 
-                    if market_waypoints.len() >= limit {
-                        return Ok(market_waypoints);
+                    if waypoints.len() >= limit {
+                        return Ok(waypoints);
                     }
                 }
                 tokio::time::sleep(Duration::from_millis(500)).await;
-                println!("checked system {}, {} markets found", system.symbol, market_waypoints.len());
+                println!("checked system {}, {} matching waypoints found", system.symbol, waypoints.len());
             }
             page += 1;
         }
 
-        Ok(market_waypoints)
+        Ok(waypoints)
     }
 }
