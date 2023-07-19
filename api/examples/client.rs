@@ -15,7 +15,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    api.hydrate().await?;
+    // api.hydrate().await?;
     println!("factions available: {:?}", api.faction_symbols());
+    println!("{:?}", api.list_systems(20).await?);
     return Ok(());
 }

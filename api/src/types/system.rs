@@ -1,5 +1,61 @@
 use std::fmt::{Display, Formatter};
 use serde::{Deserialize, Serialize};
+use crate::types::{FactionReference };
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum SystemType {
+    NeutronStar,
+    RedStar,
+    OrangeStar,
+    BlueStar,
+    YoungStar,
+    WhiteDwarf,
+    BlackHole,
+    Hypergiant,
+    Nebula,
+    Unstable,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum WaypointType {
+    Planet,
+    GasGiant,
+    Moon,
+    OrbitalStation,
+    JumpGate,
+    AsteroidField,
+    Nebula,
+    DebrisField,
+    GravityWell,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct System {
+    pub symbol: SystemSymbol,
+    pub sector_symbol: SectorSymbol,
+    #[serde(rename = "type")]
+    pub system_type: SystemType,
+    pub x: i64,
+    pub y: i64,
+    pub waypoints: Vec<Waypoint>,
+    pub factions: Vec<FactionReference>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Waypoint {
+    pub symbol: WaypointSymbol,
+    #[serde(rename = "type")]
+    pub waypoint_type: WaypointType,
+    pub x: i64,
+    pub y: i64,
+}
+
+pub type SectorSymbol = String;
+pub type SystemSymbol = String;
+pub type WaypointSymbol = String;
 
 #[derive(Debug)]
 pub enum SystemError {
@@ -79,7 +135,7 @@ mod tests {
         let c = Coordinates::new(expected.clone()).unwrap();
         match serde_json::to_string(&c) {
             Ok(s) => {
-                assert_eq!( format!("\"{}\"", expected), s);
+                assert_eq!(format!("\"{}\"", expected), s);
             }
             Err(e) => assert!(false, "could not serialize: {:?}", e)
         }

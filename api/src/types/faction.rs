@@ -15,6 +15,11 @@ pub struct Faction {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct FactionReference {
+    pub symbol: FactionSymbol,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Trait {
     pub symbol: String,
