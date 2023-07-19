@@ -57,8 +57,6 @@ impl ApiManager {
                     if market_waypoints.len() >= limit {
                         return Ok(market_waypoints);
                     }
-
-                    // println!("checked {}, {} markets found", waypoint.reference.symbol, market_waypoints.len());
                 }
                 tokio::time::sleep(Duration::from_millis(500)).await;
                 println!("checked system {}, {} markets found", system.symbol, market_waypoints.len());
