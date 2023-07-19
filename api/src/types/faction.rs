@@ -1,5 +1,6 @@
-use serde::{Serialize, Deserialize};
-use crate::types::system;
+use serde::{Deserialize, Serialize};
+
+use crate::types::system_symbol;
 
 pub type FactionSymbol = String;
 pub type FactionTraitSymbol = String;
@@ -10,7 +11,7 @@ pub struct Faction {
     pub symbol: FactionSymbol,
     pub name: String,
     pub description: String,
-    pub headquarters: system::WaypointSymbol,
+    pub headquarters: system_symbol::WaypointSymbol,
     pub traits: Vec<FactionTrait>,
     pub is_recruiting: bool,
 }
