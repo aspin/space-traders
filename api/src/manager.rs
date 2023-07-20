@@ -43,7 +43,7 @@ impl ApiManager {
         Ok(())
     }
 
-    pub async fn find_waypoint_type(&self, limit: usize, p: fn(&types::Waypoint) -> bool) -> error::Result<Vec<types::WaypointSymbol>> {
+    pub async fn find_waypoint_type(&self, limit: usize, p: impl Fn(&types::Waypoint) -> bool) -> error::Result<Vec<types::WaypointSymbol>> {
         let mut waypoints = Vec::<types::WaypointSymbol>::new();
 
         let mut page = 1;
