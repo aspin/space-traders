@@ -1,5 +1,8 @@
 use std::future::Future;
+use std::sync::Arc;
 use std::time::{Duration, SystemTime};
+use tokio::{sync, time};
+use tokio::sync::mpsc;
 
 use crate::error;
 
@@ -10,6 +13,60 @@ pub struct ActionRateLimiter<T> {
 impl<T> ActionRateLimiter<T> {
     pub async fn invoke<'a, R, F: Future<Output=error::Result<R>> + 'a>(&'a self, f: impl FnOnce(&'a T) -> F) -> error::Result<R> {
         f(&self.component).await
+    }
+}
+
+pub struct AsyncLeakyBucket<'a> {
+    bucket: LeakyBucket<'a>,
+    request_take: mpsc::Sender<(f64, Arc<sync::Notify>)>,
+    recv_take: mpsc::Receiver<(f64, Arc<sync::Notify>)>,
+}
+
+impl<'a> AsyncLeakyBucket<'a> {
+    pub fn new(bucket: LeakyBucket) -> Self {
+        let (tx, rx) = mpsc::channel::<(f64, Arc<sync::Notify>)>(0);
+        let mut async_bucket = AsyncLeakyBucket {
+            bucket,
+            request_take: tx,
+            recv_take: rx,
+        };
+        tokio::spawn(async {
+            async_bucket.task_loop().await
+        });
+        async_bucket
+    }
+
+    async fn task_loop(&mut self) {
+        let mut tasks = Vec::<(f64, Arc<sync::Notify>)>::new();
+
+        loop {
+            let sleep_time = if let Some(task) = tasks.get(0) {
+                task.0
+            } else {
+                f64::MAX
+            };
+
+            let next_wake = time::sleep(Duration::from_secs_f64(sleep_time));
+
+            tokio::select! {
+                _ = next_wake => {
+                    if let Some(task) = tasks.pop() {
+                        task.1.notify_waiters();
+                    }
+                }
+                task = self.recv_take.recv() => {
+                    if let Some(task) = task {
+                        tasks.push(task);
+                    }
+                }
+            }
+        }
+    }
+
+    pub async fn take(&mut self, amount: f64) {
+        let notify = Arc::new(sync::Notify::new());
+        self.request_take.send((amount, notify.clone()));
+        notify.notified().await;
     }
 }
 
@@ -87,7 +144,7 @@ mod tests {
     use std::ops::{AddAssign};
     use std::time::{Duration, SystemTime};
     use crate::error;
-    use crate::rate_limiter::{ActionRateLimiter, LeakyBucket};
+    use crate::rate_limiter::{ActionRateLimiter, AsyncLeakyBucket, LeakyBucket};
 
     #[test]
     fn test_leaky_bucket() {
@@ -112,6 +169,32 @@ mod tests {
         assert!(b.take(5.));
         assert!(b.take(5.));
         assert!(!b.take(5.));
+    }
+
+    #[tokio::test]
+    async fn test_async_leaky_bucket() {
+        let time = RefCell::new(SystemTime::now());
+        let bucket = LeakyBucket::new_with_clock(
+            0.,
+            100.,
+            5.,
+            Duration::from_secs(1),
+            Box::new(|| time.borrow().clone()),
+        );
+        let mut async_bucket = AsyncLeakyBucket::new(bucket);
+
+        // assert!(!bucket.take(5.));
+
+        // time.borrow_mut().add_assign(Duration::from_secs(1));
+        // assert!(bucket.take(5.));
+        // assert!(!bucket.take(5.));
+        // assert_eq!(Duration::from_secs(1), bucket.when(5.));
+        // assert_eq!(Duration::from_secs(2), bucket.when(10.));
+        //
+        // time.borrow_mut().add_assign(Duration::from_secs(2));
+        // assert!(bucket.take(5.));
+        // assert!(bucket.take(5.));
+        // assert!(!bucket.take(5.));
     }
 
     #[tokio::test]
